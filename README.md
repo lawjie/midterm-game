@@ -1,0 +1,17 @@
+- assets for enemies
+- abilities
+- debuff ability not working
+- silence ability not working
+- inventory and equipment function
+- no sounds
+- some scenes are unfinished
+
+> monster abilities are inside MonsterArrow.cs and MinigameManager.cs
+> all battle related function are in BattleManager.cs
+> tiles are in the tile palette
+> assigning of enemy id is both in the EnemyEncounter object (Battle Scene) and  click an enemy sprite (Game Scene)
+> can create a prefab for enemy instead for consistency
+> enemy id = defeated = door opens
+> check door objects to see enemy id assignment
+> bottom part of the map is testing site, can remove
+> Manager objects has settings, edit if needed
