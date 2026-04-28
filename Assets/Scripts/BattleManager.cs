@@ -7,6 +7,10 @@ using TMPro;
 
 public class BattleManager : MonoBehaviour
 {
+    public GameObject silenceIconObject;
+    [SerializeField] private int silenceUsesPerStage = 1; // editable in Inspector
+    private int silenceUsesLeft;
+
     public string gameOverSceneName = "Game Over";
 
     public HealthBar playerHealthBar;
@@ -57,6 +61,7 @@ public class BattleManager : MonoBehaviour
     // start here ---------------------------------------------------------------------------------------
     void Start()
     {
+        silenceUsesLeft = silenceUsesPerStage;
         Debug.Log("Enemy ID at start: " + GameData.currentEnemyID);
 
         UpdateEnemy();
@@ -122,7 +127,7 @@ public class BattleManager : MonoBehaviour
             attackUpButton.interactable = PlayerData.currentMana >= attackUpCost && atkUpCooldown == 0;
 
         if (silenceButton != null)
-            silenceButton.interactable = PlayerData.currentMana >= silenceCost && silenceCooldown == 0;
+            silenceButton.interactable = PlayerData.currentMana >= silenceCost && silenceUsesLeft > 0;
 
         if (meditateButton != null)
             meditateButton.interactable = meditateCooldown == 0;
@@ -301,21 +306,23 @@ public class BattleManager : MonoBehaviour
     // wala pa skill ----------------------------------------------------------------------------
     public void Silence()
     {
-        if (PlayerData.currentMana < silenceCost || silenceCooldown > 0)
-        {
-            statusUI.SetMessage("<color=red>Not ready</color>");
-            return;
-        }
+
+        if (PlayerData.currentMana < silenceCost || silenceUsesLeft <= 0) return;
+
+        if (silenceIconObject != null)
+            silenceIconObject.SetActive(true);
+            silenceIconObject.transform.SetAsFirstSibling();
 
         PlayerData.currentMana -= silenceCost;
+        silenceUsesLeft--;
+        minigame.isSilenced = true;
+        monsterData.ApplySilenceText();
 
-        silenceCooldown = 3;
+        statusUI.SetMessage("Silenced! Enemy abilities suppressed");
 
-        statusUI.SetMessage("Enemy silenced!");
-
+        ClampValues();
         UpdateAllBars();
-        UpdateSkillButtons();
-        UpdateCooldownUI();
+        UpdateSkillButtons(); // this already handles the silence button
     }
 
     // konektado dito ung attack function kanina ^^^^^ up
@@ -397,6 +404,8 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        if (silenceIconObject != null)
+            silenceIconObject.SetActive(false);
 
         ClampValues();
         UpdateAllBars();
@@ -413,4 +422,5 @@ public class BattleManager : MonoBehaviour
         PlayerData.currentMana = Mathf.Clamp(PlayerData.currentMana, 0, PlayerData.maxMana);
         EnemyData.currentHealth = Mathf.Clamp(EnemyData.currentHealth, 0, EnemyData.maxHealth);
     }
+
 }

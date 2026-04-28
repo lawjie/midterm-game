@@ -62,6 +62,11 @@ public class MonsterDataManager : MonoBehaviour
         }
     }
 
+    public void ApplySilenceText()
+    {
+        abilityText.text = "Silenced! Enemy ability suppressed.";
+    }
+
     MonsterType GetMonsterType(string id)
     {
         if (id.Contains("slime")) return MonsterType.Slime;

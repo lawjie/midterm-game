@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class MinigameManager : MonoBehaviour
 {
+    public bool isSilenced = false;
+
     public GameObject panel;
     public Transform arrowParent;
     public GameObject arrowPrefab;
@@ -104,10 +106,13 @@ public class MinigameManager : MonoBehaviour
             arrow.SetDirection(randomKey);
 
             // apply ability
-            arrow.ApplyMonsterEffect(currentType);
+            if (!isSilenced)
+                arrow.ApplyMonsterEffect(currentType);
 
             arrows.Add(arrow);
+
         }
+        isSilenced = false;
     }
 
     void HandleInput(KeyCode key)
@@ -165,9 +170,9 @@ public class MinigameManager : MonoBehaviour
     {
         panel.SetActive(false);
 
-        FindObjectOfType<BattleManager>().ResolveAttack(correctHits, incorrectHits);
+        FindFirstObjectByType<BattleManager>().ResolveAttack(correctHits, incorrectHits);
 
-        FindObjectOfType<BattleManager>().UpdateUITextVisibility();
+        FindFirstObjectByType<BattleManager>().UpdateUITextVisibility();
 
         Debug.Log("Hits: " + correctHits);
     }
