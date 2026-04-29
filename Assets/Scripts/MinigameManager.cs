@@ -69,6 +69,12 @@ public class MinigameManager : MonoBehaviour
 
     public void StartMinigame(int arrowCount)
     {
+        if (GameState.TutorialMode)
+        {
+            panel.SetActive(false);
+            return;
+        }
+
         totalArrows = arrowCount;
         panel.SetActive(true);
 

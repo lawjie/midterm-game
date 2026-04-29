@@ -24,6 +24,9 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
+        // spawn at saved positio
+        transform.position = GameData.playerPosition;
+
         if (GameData.hasSavedPosition)
         {
             transform.position = GameData.playerPosition;

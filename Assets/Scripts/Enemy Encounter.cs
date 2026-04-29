@@ -21,7 +21,6 @@ public class EnemyEncounter : MonoBehaviour
         canTrigger = true;
     }
 
-
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (hasTriggered) return;
@@ -38,20 +37,21 @@ public class EnemyEncounter : MonoBehaviour
     {
         Player playerScript = player.GetComponentInParent<Player>();
 
+        // spawn ---------------------------------------
         if (playerScript != null)
         {
-            GameData.playerPosition = player.transform.position;
-            GameData.hasSavedPosition = true;
+            if (!GameState.TutorialMode)
+            {
+                GameData.playerPosition = player.transform.position;
+                GameData.returningFromBattle = true;
+            }
 
-            // pasa data
             PlayerData.maxHealth = playerScript.maxHealth;
             PlayerData.currentHealth = playerScript.currentHealth;
 
-            // pasa data
             PlayerData.maxMana = 100;
             PlayerData.currentMana = 100;
 
-            // cant move
             playerScript.enabled = false;
         }
 
@@ -61,12 +61,8 @@ public class EnemyEncounter : MonoBehaviour
         {
             GameData.currentEnemyID = enemy.enemyID;
         }
-        else
-        {
-            Debug.LogError("Enemy script not found"); // error test
-        }
 
-        yield return new WaitForSeconds(0.3f); // delay
+        yield return new WaitForSeconds(0.3f);
 
         SceneManager.LoadScene(encounterSceneName);
     }

@@ -181,8 +181,15 @@ public class BattleManager : MonoBehaviour
     // call minigame using vutton ---------------------------------------------------------------------------------------
     public void Attack()
     {
-        SetBattleButtons(false); // disable when minigame start
-        minigame.StartMinigame(6); // change how many arrow spawn
+        SetBattleButtons(false);
+
+        if (GameState.TutorialMode)
+        {
+            ResolveAttackTutorial();
+            return;
+        }
+
+        minigame.StartMinigame(6);
         UpdateUITextVisibility();
     }
 
@@ -347,6 +354,43 @@ public class BattleManager : MonoBehaviour
     }
 
     // attack fucntion ----------------------------------------------------------------------------
+    void ResolveAttackTutorial()
+    {
+        int fixedDamage = 999;
+
+        EnemyData.currentHealth -= fixedDamage;
+
+        statusUI.SetMessage("<color=yellow>DEV HIT: 999 DAMAGE!</color>");
+
+        if (EnemyData.currentHealth <= 0)
+        {
+            GameData.tutorialEnemiesDefeated++;
+
+            Debug.Log("kill count: " + GameData.tutorialEnemiesDefeated);
+
+            GameData.defeatedEnemies.Add(GameData.currentEnemyID);
+
+            if (GameData.tutorialEnemiesDefeated >= GameData.tutorialEnemyGoal)
+            {
+                GameState.TutorialMode = false;
+                GameData.justFinishedTutorial = true;
+
+                SceneManager.LoadScene("Game Scene");
+                return;
+            }
+
+            SceneManager.LoadScene("Tutorial Scene"); // this
+            return;
+        }
+
+        ClampValues();
+        UpdateAllBars();
+        UpdateSkillButtons();
+        UpdateCooldownUI();
+
+        SetBattleButtons(true);
+    }
+
     public void ResolveAttack(int correctHits, int incorrectHits)
     {
 
@@ -421,6 +465,26 @@ public class BattleManager : MonoBehaviour
         if (EnemyData.currentHealth <= 0)
         {
             GameData.defeatedEnemies.Add(GameData.currentEnemyID);
+
+            if (GameState.TutorialMode)
+            {
+                GameData.tutorialEnemiesDefeated++;
+
+                Debug.Log("Tutorial Kills: " + GameData.tutorialEnemiesDefeated);
+
+                if (GameData.tutorialEnemiesDefeated >= GameData.tutorialEnemyGoal)
+                {
+                    GameState.TutorialMode = false;
+                    SceneManager.LoadScene("Game Scene");
+                }
+                else
+                {
+                    SceneManager.LoadScene("Tutorial Scene");
+                }
+
+                return;
+            }
+
             SceneManager.LoadScene("Game Scene");
             return;
         }
