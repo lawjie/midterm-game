@@ -349,15 +349,36 @@ public class BattleManager : MonoBehaviour
     // attack fucntion ----------------------------------------------------------------------------
     public void ResolveAttack(int correctHits, int incorrectHits)
     {
+
         int playerBase = 5;
         int enemyBase = 10;
 
         int playerDamage = (playerBase + attackBuff) * correctHits;
         int enemyDamage = enemyBase * incorrectHits;
 
+        // debuff damage
+        int debuffDamage = 0;
+
+        foreach (var slot in debuffSlots)
+        {
+            switch (slot.debuffType)
+            {
+                case DebuffType.Burn:
+                    debuffDamage += slot.stack * 2;
+                    break;
+                case DebuffType.Poison:
+                    debuffDamage += slot.stack * (correctHits * 2);
+                    break;
+                case DebuffType.Rupture:
+                    debuffDamage += 2 * correctHits;
+                    break;
+            }
+        }
+
         if (playerDamage > 0)
             EnemyData.currentHealth -= playerDamage;
-
+        if (debuffDamage > 0)
+            EnemyData.currentHealth -= debuffDamage;
         if (enemyDamage > 0)
             PlayerData.currentHealth -= enemyDamage;
 
@@ -383,7 +404,7 @@ public class BattleManager : MonoBehaviour
             string msg = "";
 
             if (playerDamage > 0)
-                msg += "You dealt " + playerDamage + " damage!\n";
+                msg += "You dealt " + (playerDamage + debuffDamage) + " damage!\n";
 
             if (enemyDamage > 0)
                 msg += "<color=red>Enemy dealt " + enemyDamage + " damage!</color>";
