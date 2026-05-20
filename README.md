@@ -1,7 +1,1 @@
-- assets for enemies
-- abilities
-- debuff ability not working
-- silence ability not working
-- inventory and equipment function
-- no sounds
-- some scenes are unfinished
+none (?)
