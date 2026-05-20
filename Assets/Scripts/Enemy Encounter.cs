@@ -64,6 +64,7 @@ public class EnemyEncounter : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
+        SoundManager.instance.PlayBGM(SoundManager.instance.enemyEncounterBGM);
         SceneManager.LoadScene(encounterSceneName);
     }
 }

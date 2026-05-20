@@ -153,7 +153,7 @@ public class MinigameManager : MonoBehaviour
 
             if (currentType == MonsterType.Oni)
             {
-                damage = 2;
+                damage = 5;
             }
 
             incorrectHits += damage;

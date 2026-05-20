@@ -52,21 +52,23 @@ public class Player : MonoBehaviour
         _rb2d.linearVelocity = _input * _speed;
     }
 
-    void Update()
+void Update()
+{
+    float horizontalInput = Input.GetAxisRaw(_horizontalAxis);
+    float verticalInput = Input.GetAxisRaw(_verticalAxis);
+    _input = new Vector2(horizontalInput, verticalInput);
+    _input.Normalize();
+
+    if (_input != Vector2.zero)
     {
-        float horizontalInput = Input.GetAxisRaw(_horizontalAxis);
-        float verticalInput = Input.GetAxisRaw(_verticalAxis);
-
-        _input = new Vector2(horizontalInput, verticalInput);
-        _input.Normalize();
-
-        /* hp testing lng to
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            TakeDamage(20);
-        }
-        */
+        if (!SoundManager.instance.sfxSource.isPlaying)
+            SoundManager.instance.PlaySFX(SoundManager.instance.footstepsClip);
     }
+    else
+    {
+        SoundManager.instance.sfxSource.Stop();
+    }
+}
 
     // none
     void TakeDamage(int damage)

@@ -6,6 +6,7 @@ public class GameSceneManager : MonoBehaviour
 
     void Start()
     {
+        SoundManager.instance.PlayBGM(SoundManager.instance.exploringBGM);
         // from tutorila
         if (GameData.justFinishedTutorial)
         {

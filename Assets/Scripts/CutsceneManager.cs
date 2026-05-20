@@ -18,7 +18,7 @@ public class StoryIntroSequence : MonoBehaviour
 
 	// Settings
 	public float walkSpeed = 4f;
-	public string nextSceneName = "GameScene";
+	public string nextSceneName = "Equipment Scene";
 	public string[] arrogantRemarks;
 
 	void Start()

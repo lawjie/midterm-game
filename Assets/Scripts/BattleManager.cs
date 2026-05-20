@@ -1,5 +1,3 @@
-// dito lahat ng battle functions
-
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,7 +6,7 @@ using TMPro;
 public class BattleManager : MonoBehaviour
 {
     public GameObject silenceIconObject;
-    [SerializeField] private int silenceUsesPerStage = 1; // editable in Inspector
+    [SerializeField] private int silenceUsesPerStage = 1;
     private int silenceUsesLeft;
 
     public string gameOverSceneName = "Game Over";
@@ -24,71 +22,97 @@ public class BattleManager : MonoBehaviour
     public DebuffTooltip[] debuffSlots;
     public DebuffInfo[] debuffDatabase;
 
-    public Button debuffButton;
-    public Button[] battleButtons;
-
     public BattleStatus statusUI;
     public MinigameManager minigame;
     public GameObject minigamePanel;
 
+    public WeaponSkills weaponSkills;
+
+    // keep heal and meditate
     public Button healButton;
     public Button meditateButton;
-    public Button attackUpButton;
-    public Button silenceButton;
+
+    // weapon skill buttons (replaces attackUp, silence, debuff)
+    public Button skill1Button;
+    public Button skill2Button;
+    public Button skill3Button;
+
+    public TextMeshProUGUI skill1NameText;
+    public TextMeshProUGUI skill2NameText;
+    public TextMeshProUGUI skill3NameText;
+
+    [Header("Skill Icons")]
+    public Image skill1Icon;
+    public Image skill2Icon;
+    public Image skill3Icon;
+
+    [Header("Sword Sprites")]
+    public Sprite strikeSprite;
+    public Sprite parrySprite;
+    public Sprite rendSprite;
+
+    [Header("Bow Sprites")]
+    public Sprite aimedShotSprite;
+    public Sprite trapSprite;
+    public Sprite poisonArrowSprite;
+
+    [Header("Staff Sprites")]
+    public Sprite manaBurstSprite;
+    public Sprite silenceSprite;
+    public Sprite scorchSprite;
+
+    [Header("Damage")]
+    public int normalEnemyBaseDamage = 10;
+    public int bossEnemyBaseDamage = 25;
+
+    public Button[] battleButtons;
 
     public TextMeshProUGUI monsterHPText;
     public TextMeshProUGUI playerHPText;
     public TextMeshProUGUI playerManaText;
 
     public TextMeshProUGUI meditateCDText;
-    public TextMeshProUGUI atkUpCDText;
-    public TextMeshProUGUI silenceCDText;
+    public TextMeshProUGUI skill1CDText;
+    public TextMeshProUGUI skill2CDText;
+    public TextMeshProUGUI skill3CDText;
 
-    // can change mana cost
     private int healCost = 15;
-    private int debuffCost = 25;
-    private int attackUpCost = 30;
-    private int silenceCost = 35;
-
-    // cd for mana regen
     private int meditateCooldown = 0;
-    private int atkUpCooldown = 0;
-    private int silenceCooldown = 0;
 
-    private int attackBuff = 0;
-    private int attackBuffTurns = 0;
+    private int healCooldown = 0;
+    public TextMeshProUGUI healCDText;
 
-    // start here ---------------------------------------------------------------------------------------
+    [Header("Victory")]
+    public string finalBossID = "iris_1";
+    public string victorySceneName = "Victory Scene";
+
     void Start()
     {
+        SoundManager.instance.PlayBGM(SoundManager.instance.battleSceneBGM);
         silenceUsesLeft = silenceUsesPerStage;
         Debug.Log("Enemy ID at start: " + GameData.currentEnemyID);
 
         UpdateEnemy();
-
         UpdateAllBars();
-
         monsterData.SetupMonster(GameData.currentEnemyID);
 
-        // init debuff
         foreach (var slot in debuffSlots)
         {
             slot.debuffType = DebuffType.None;
             slot.stack = 0;
-
-            if (slot.icon != null)
-                slot.icon.enabled = false;
-
+            if (slot.icon != null) slot.icon.enabled = false;
             slot.UpdateStackText();
         }
 
-        UpdateDebuffButtonState();
+        weaponSkills.battle = this;
+        weaponSkills.minigame = minigame;
+        SetupWeaponUI();
+
         UpdateSkillButtons();
         UpdateCooldownUI();
     }
 
-    // update enemy ---------------------------------------------------------------------------------------
-    void UpdateEnemy() // spawn enemy after encounter
+    void UpdateEnemy()
     {
         if (enemySpawn == null || enemyRenderer == null)
         {
@@ -104,7 +128,6 @@ public class BattleManager : MonoBehaviour
         if (data != null)
         {
             enemyRenderer.sprite = data.sprite;
-
             EnemyData.maxHealth = data.maxHealth;
             EnemyData.currentHealth = data.maxHealth;
         }
@@ -114,26 +137,70 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    // depends on situation, disable or enable ---------------------------------------------------------------------------------------
+    void SetupWeaponUI()
+    {
+        skill1Button.onClick.RemoveAllListeners();
+        skill2Button.onClick.RemoveAllListeners();
+        skill3Button.onClick.RemoveAllListeners();
+
+        switch (WeaponData.equippedWeapon)
+        {
+            case WeaponType.Sword:
+                if (skill1NameText != null) skill1NameText.text = "Strike";
+                if (skill2NameText != null) skill2NameText.text = "Parry";
+                if (skill3NameText != null) skill3NameText.text = "Rend";
+                if (skill1Icon != null) skill1Icon.sprite = strikeSprite;
+                if (skill2Icon != null) skill2Icon.sprite = parrySprite;
+                if (skill3Icon != null) skill3Icon.sprite = rendSprite;
+                skill1Button.onClick.AddListener(weaponSkills.Strike);
+                skill2Button.onClick.AddListener(weaponSkills.Parry);
+                skill3Button.onClick.AddListener(weaponSkills.Rend);
+                break;
+
+            case WeaponType.Bow:
+                if (skill1NameText != null) skill1NameText.text = "Aimed Shot";
+                if (skill2NameText != null) skill2NameText.text = "Trap";
+                if (skill3NameText != null) skill3NameText.text = "Poison Arrow";
+                if (skill1Icon != null) skill1Icon.sprite = aimedShotSprite;
+                if (skill2Icon != null) skill2Icon.sprite = trapSprite;
+                if (skill3Icon != null) skill3Icon.sprite = poisonArrowSprite;
+                skill1Button.onClick.AddListener(weaponSkills.AimedShot);
+                skill2Button.onClick.AddListener(weaponSkills.Trap);
+                skill3Button.onClick.AddListener(weaponSkills.PoisonArrow);
+                break;
+
+            case WeaponType.Staff:
+                if (skill1NameText != null) skill1NameText.text = "Mana Burst";
+                if (skill2NameText != null) skill2NameText.text = "Silence";
+                if (skill3NameText != null) skill3NameText.text = "Scorch";
+                if (skill1Icon != null) skill1Icon.sprite = manaBurstSprite;
+                if (skill2Icon != null) skill2Icon.sprite = silenceSprite;
+                if (skill3Icon != null) skill3Icon.sprite = scorchSprite;
+                skill1Button.onClick.AddListener(weaponSkills.ManaBurst);
+                skill2Button.onClick.AddListener(weaponSkills.StaffSilence);
+                skill3Button.onClick.AddListener(weaponSkills.Scorch);
+                break;
+        }
+    }
+
     void UpdateSkillButtons()
     {
         if (healButton != null)
-            healButton.interactable = PlayerData.currentMana >= healCost;
-
-        if (debuffButton != null)
-            debuffButton.interactable = PlayerData.currentMana >= debuffCost;
-
-        if (attackUpButton != null)
-            attackUpButton.interactable = PlayerData.currentMana >= attackUpCost && atkUpCooldown == 0;
-
-        if (silenceButton != null)
-            silenceButton.interactable = PlayerData.currentMana >= silenceCost && silenceUsesLeft > 0;
+            healButton.interactable = PlayerData.currentMana >= healCost && healCooldown == 0;
 
         if (meditateButton != null)
             meditateButton.interactable = meditateCooldown == 0;
+
+        if (skill1Button != null)
+            skill1Button.interactable = PlayerData.currentMana >= weaponSkills.GetSkill1Cost() && weaponSkills.GetSkill1CD() == 0;
+
+        if (skill2Button != null)
+            skill2Button.interactable = PlayerData.currentMana >= weaponSkills.GetSkill2Cost() && weaponSkills.GetSkill2CD() == 0;
+
+        if (skill3Button != null)
+            skill3Button.interactable = PlayerData.currentMana >= weaponSkills.GetSkill3Cost() && weaponSkills.GetSkill3CD() == 0;
     }
 
-    // update the bar UIs ---------------------------------------------------------------------------------------
     void UpdateAllBars()
     {
         playerHealthBar.SetMaxHealth(PlayerData.maxHealth);
@@ -145,40 +212,36 @@ public class BattleManager : MonoBehaviour
         enemyHealthBar.SetMaxHealth(EnemyData.maxHealth);
         enemyHealthBar.SetHealth(EnemyData.currentHealth);
 
-        // text notifier
-        if (playerHPText != null)
-            playerHPText.text = PlayerData.currentHealth.ToString();
-
-        if (playerManaText != null)
-            playerManaText.text = PlayerData.currentMana.ToString();
-
-        if (monsterHPText != null)
-            monsterHPText.text = EnemyData.currentHealth.ToString();
+        if (playerHPText != null) playerHPText.text = PlayerData.currentHealth.ToString();
+        if (playerManaText != null) playerManaText.text = PlayerData.currentMana.ToString();
+        if (monsterHPText != null) monsterHPText.text = EnemyData.currentHealth.ToString();
     }
 
     public void UpdateUITextVisibility()
     {
         bool isMinigameOpen = minigamePanel != null && minigamePanel.activeSelf;
-
         if (monsterHPText != null)
             monsterHPText.gameObject.SetActive(!isMinigameOpen);
-
     }
 
-    // cooldowns ---------------------------------------------------------------------------------------
     void UpdateCooldownUI()
     {
         if (meditateCDText != null)
             meditateCDText.text = meditateCooldown > 0 ? meditateCooldown.ToString() : "";
 
-        if (atkUpCDText != null)
-            atkUpCDText.text = atkUpCooldown > 0 ? atkUpCooldown.ToString() : "";
+        if (healCDText != null)
+            healCDText.text = healCooldown > 0 ? healCooldown.ToString() : "";
 
-        if (silenceCDText != null)
-            silenceCDText.text = silenceCooldown > 0 ? silenceCooldown.ToString() : "";
+        if (skill1CDText != null)
+            skill1CDText.text = weaponSkills.GetSkill1CD() > 0 ? weaponSkills.GetSkill1CD().ToString() : "";
+
+        if (skill2CDText != null)
+            skill2CDText.text = weaponSkills.GetSkill2CD() > 0 ? weaponSkills.GetSkill2CD().ToString() : "";
+
+        if (skill3CDText != null)
+            skill3CDText.text = weaponSkills.GetSkill3CD() > 0 ? weaponSkills.GetSkill3CD().ToString() : "";
     }
 
-    // call minigame using vutton ---------------------------------------------------------------------------------------
     public void Attack()
     {
         SetBattleButtons(false);
@@ -189,11 +252,18 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        if (weaponSkills.skipMinigameNextAttack)
+        {
+            weaponSkills.skipMinigameNextAttack = false;
+            ResolveAttack(6, 0);
+            return;
+        }
+
         minigame.StartMinigame(6);
         UpdateUITextVisibility();
     }
 
-    public void Meditate() // mana func ---------------------------------------------------------------------------------------
+    public void Meditate()
     {
         if (meditateCooldown > 0)
         {
@@ -201,18 +271,16 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        PlayerData.currentMana += 30; // regen mana ---------------------------------------------------------------------------------------
-
+        PlayerData.currentMana += 30;
         meditateCooldown = 1;
 
         ClampValues();
         UpdateAllBars();
-        UpdateDebuffButtonState();
         UpdateSkillButtons();
         UpdateCooldownUI();
     }
 
-    public void Heal() // same here ---------------------------------------------------------------------------------------
+    public void Heal()
     {
         if (PlayerData.currentMana < healCost)
         {
@@ -220,119 +288,68 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        if (healCooldown > 0)
+        {
+            statusUI.SetMessage("<color=yellow>Heal is on cooldown</color>");
+            return;
+        }
+
         PlayerData.currentMana -= healCost;
-        PlayerData.currentHealth += 20;
+        PlayerData.currentHealth += 35;
+        healCooldown = 2;
 
         ClampValues();
-        UpdateAllBars();
-        UpdateDebuffButtonState();
-        UpdateSkillButtons();
-    }
-
-    // debuff skill , but no effect yet ----------------------------------------------------------------------------
-    public void ApplyRandomDebuff()
-    {
-        int manaCost = debuffCost;
-
-        if (PlayerData.currentMana < manaCost)
-        {
-            if (statusUI != null)
-                statusUI.SetMessage("<color=red>You have no mana left</color>");
-            return;
-        }
-
-        PlayerData.currentMana -= manaCost;
-        UpdateAllBars();
-
-        DebuffInfo chosen = debuffDatabase[Random.Range(0, debuffDatabase.Length)];
-
-        // debuff stacking here
-        foreach (var slot in debuffSlots)
-        {
-            if (slot.debuffType == chosen.type)
-            {
-                slot.stack++;
-
-                if (slot.icon != null)
-                {
-                    slot.icon.sprite = chosen.icon;
-                    slot.icon.enabled = true;
-                }
-
-                slot.UpdateStackText();
-                UpdateDebuffButtonState();
-                return;
-            }
-        }
-
-        // fill the empty slot with a debff 
-        foreach (var slot in debuffSlots)
-        {
-            if (slot.debuffType == DebuffType.None)
-            {
-                slot.debuffType = chosen.type;
-                slot.stack = 1;
-
-                if (slot.icon != null)
-                {
-                    slot.icon.sprite = chosen.icon;
-                    slot.icon.enabled = true;
-                }
-
-                slot.description = chosen.description;
-
-                slot.UpdateStackText();
-                UpdateDebuffButtonState();
-                return;
-            }
-        }
-    }
-
-    // buff skill ----------------------------------------------------------------------------
-    public void AttackUp()
-    {
-        if (PlayerData.currentMana < attackUpCost || atkUpCooldown > 0)
-        {
-            statusUI.SetMessage("<color=red>Not ready</color>");
-            return;
-        }
-
-        PlayerData.currentMana -= attackUpCost;
-
-        attackBuff = 10;
-        attackBuffTurns = 2;
-        atkUpCooldown = 5;
-
-        statusUI.SetMessage("Attack increased for 2 turns!");
-
         UpdateAllBars();
         UpdateSkillButtons();
         UpdateCooldownUI();
     }
 
-    // wala pa skill ----------------------------------------------------------------------------
-    public void Silence()
+    public void RefreshAfterSkill()
     {
-
-        if (PlayerData.currentMana < silenceCost || silenceUsesLeft <= 0) return;
-
-        if (silenceIconObject != null)
-            silenceIconObject.SetActive(true);
-            silenceIconObject.transform.SetAsFirstSibling();
-
-        PlayerData.currentMana -= silenceCost;
-        silenceUsesLeft--;
-        minigame.isSilenced = true;
-        monsterData.ApplySilenceText();
-
-        statusUI.SetMessage("Silenced! Enemy abilities suppressed");
-
         ClampValues();
         UpdateAllBars();
-        UpdateSkillButtons(); // this already handles the silence button
+        UpdateSkillButtons();
+        UpdateCooldownUI();
     }
 
-    // konektado dito ung attack function kanina ^^^^^ up
+    public void AddDebuff(DebuffType type)
+    {
+        DebuffInfo chosen = System.Array.Find(debuffDatabase, d => d.type == type);
+        if (chosen == null) return;
+
+        foreach (var slot in debuffSlots)
+        {
+            if (slot.debuffType == type)
+            {
+                slot.stack++;
+                slot.icon.sprite = chosen.icon;
+                slot.icon.enabled = true;
+                slot.UpdateStackText();
+                return;
+            }
+        }
+
+        foreach (var slot in debuffSlots)
+        {
+            if (slot.debuffType == DebuffType.None)
+            {
+                slot.debuffType = type;
+                slot.stack = 1;
+                slot.icon.sprite = chosen.icon;
+                slot.icon.enabled = true;
+                slot.description = chosen.description;
+                slot.UpdateStackText();
+                return;
+            }
+        }
+    }
+
+    public void ShowSilenceIcon(bool state)
+    {
+        if (silenceIconObject != null)
+            silenceIconObject.SetActive(state);
+    }
+
     public void SetBattleButtons(bool state)
     {
         foreach (Button btn in battleButtons)
@@ -342,44 +359,27 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    void UpdateDebuffButtonState()
-    {
-        if (debuffButton == null) return;
-
-        bool hasMana = PlayerData.currentMana >= debuffCost;
-
-        ColorBlock colors = debuffButton.colors;
-        colors.normalColor = hasMana ? Color.white : Color.gray;
-        debuffButton.colors = colors;
-    }
-
-    // attack fucntion ----------------------------------------------------------------------------
     void ResolveAttackTutorial()
     {
         int fixedDamage = 999;
-
         EnemyData.currentHealth -= fixedDamage;
-
         statusUI.SetMessage("<color=yellow>DEV HIT: 999 DAMAGE!</color>");
 
         if (EnemyData.currentHealth <= 0)
         {
             GameData.tutorialEnemiesDefeated++;
-
             Debug.Log("kill count: " + GameData.tutorialEnemiesDefeated);
-
             GameData.defeatedEnemies.Add(GameData.currentEnemyID);
 
             if (GameData.tutorialEnemiesDefeated >= GameData.tutorialEnemyGoal)
             {
                 GameState.TutorialMode = false;
                 GameData.justFinishedTutorial = true;
-
-                SceneManager.LoadScene("Game Scene");
+                SceneManager.LoadScene("Equipment Scene");
                 return;
             }
 
-            SceneManager.LoadScene("Tutorial Scene"); // this
+            SceneManager.LoadScene("Tutorial Scene");
             return;
         }
 
@@ -387,22 +387,37 @@ public class BattleManager : MonoBehaviour
         UpdateAllBars();
         UpdateSkillButtons();
         UpdateCooldownUI();
-
         SetBattleButtons(true);
     }
 
     public void ResolveAttack(int correctHits, int incorrectHits)
     {
-
         int playerBase = 5;
-        int enemyBase = 10;
+        int enemyBase = GetEnemyBaseDamage();
 
-        int playerDamage = (playerBase + attackBuff) * correctHits;
+        int playerDamage = playerBase * correctHits;
         int enemyDamage = enemyBase * incorrectHits;
+
+        // weapon bonuses
+        int weaponBonus = weaponSkills.ConsumeManaBurstBonus()
+                        + (weaponSkills.ConsumeAimedShotBonus() * correctHits);
+
+        // parry
+        if (weaponSkills.parryActive)
+        {
+            enemyDamage /= 2;
+            weaponSkills.parryActive = false;
+        }
+
+        // trap
+        if (weaponSkills.trapActive)
+        {
+            enemyDamage = 0;
+            weaponSkills.trapActive = false;
+        }
 
         // debuff damage
         int debuffDamage = 0;
-
         foreach (var slot in debuffSlots)
         {
             switch (slot.debuffType)
@@ -419,40 +434,26 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        if (playerDamage > 0)
-            EnemyData.currentHealth -= playerDamage;
-        if (debuffDamage > 0)
-            EnemyData.currentHealth -= debuffDamage;
-        if (enemyDamage > 0)
-            PlayerData.currentHealth -= enemyDamage;
+        if (playerDamage > 0) EnemyData.currentHealth -= playerDamage;
+        if (weaponBonus > 0) EnemyData.currentHealth -= weaponBonus;
+        if (debuffDamage > 0) EnemyData.currentHealth -= debuffDamage;
+        if (enemyDamage > 0) PlayerData.currentHealth -= enemyDamage;
 
-        // cooldown reduce
+        // tick cooldowns
         if (meditateCooldown > 0) meditateCooldown--;
-        if (atkUpCooldown > 0) atkUpCooldown--;
-        if (silenceCooldown > 0) silenceCooldown--;
+        if (healCooldown > 0) healCooldown--;
+        weaponSkills.TickCooldowns();
 
-        // buff reduce
-        if (attackBuffTurns > 0)
-        {
-            attackBuffTurns--;
-
-            if (attackBuffTurns == 0)
-            {
-                attackBuff = 0;
-                statusUI.SetMessage("Attack buff faded.");
-            }
-        }
+        if (silenceIconObject != null)
+            silenceIconObject.SetActive(false);
 
         if (statusUI != null)
         {
             string msg = "";
-
-            if (playerDamage > 0)
-                msg += "You dealt " + (playerDamage + debuffDamage) + " damage!\n";
-
+            if (playerDamage + weaponBonus + debuffDamage > 0)
+                msg += "You dealt " + (playerDamage + weaponBonus + debuffDamage) + " damage!\n";
             if (enemyDamage > 0)
                 msg += "<color=red>Enemy dealt " + enemyDamage + " damage!</color>";
-
             statusUI.SetMessage(msg);
         }
 
@@ -469,19 +470,25 @@ public class BattleManager : MonoBehaviour
             if (GameState.TutorialMode)
             {
                 GameData.tutorialEnemiesDefeated++;
-
                 Debug.Log("Tutorial Kills: " + GameData.tutorialEnemiesDefeated);
 
                 if (GameData.tutorialEnemiesDefeated >= GameData.tutorialEnemyGoal)
                 {
                     GameState.TutorialMode = false;
-                    SceneManager.LoadScene("Game Scene");
+                    SceneManager.LoadScene("Equipment Scene");
                 }
                 else
                 {
                     SceneManager.LoadScene("Tutorial Scene");
                 }
+                return;
+            }
 
+            // check if final boss
+            if (GameData.currentEnemyID.Contains(finalBossID))
+            {
+                SoundManager.instance.PlayBGM(SoundManager.instance.victoryBGM);
+                SceneManager.LoadScene(victorySceneName);
                 return;
             }
 
@@ -489,23 +496,23 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        if (silenceIconObject != null)
-            silenceIconObject.SetActive(false);
-
         ClampValues();
         UpdateAllBars();
         UpdateSkillButtons();
         UpdateCooldownUI();
-
         SetBattleButtons(true);
     }
+    int GetEnemyBaseDamage()
+    {
+        if (GameData.currentEnemyID.Contains(finalBossID))
+            return bossEnemyBaseDamage;
 
-
+        return normalEnemyBaseDamage;
+    }
     void ClampValues()
     {
         PlayerData.currentHealth = Mathf.Clamp(PlayerData.currentHealth, 0, PlayerData.maxHealth);
         PlayerData.currentMana = Mathf.Clamp(PlayerData.currentMana, 0, PlayerData.maxMana);
         EnemyData.currentHealth = Mathf.Clamp(EnemyData.currentHealth, 0, EnemyData.maxHealth);
     }
-
 }
