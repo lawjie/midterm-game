@@ -13,4 +13,16 @@ public static class GameData
     public static bool hasSavedPosition = false;
     public static bool returningFromBattle = false;
     public static bool justFinishedTutorial = false;
+
+    public static void Reset()
+    {
+        tutorialEnemiesDefeated = 0;
+        canEncounter = false;
+        defeatedEnemies.Clear();
+        currentEnemyID = "";
+        playerPosition = Vector3.zero;
+        hasSavedPosition = false;
+        returningFromBattle = false;
+        justFinishedTutorial = false;
+    }
 }

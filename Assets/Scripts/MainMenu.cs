@@ -9,7 +9,10 @@ public class MainMenu : MonoBehaviour
     }
     public void PlayGame()
     {
-        SceneManager.LoadScene("Story Intro");
+        PlayerData.Reset();
+        GameData.Reset();
+        WeaponData.equippedWeapon = WeaponType.None;
+        SceneManager.LoadScene("Tutorial Scene");
     }
 
     public void ExitGame()

@@ -46,6 +46,13 @@ public class BattleManager : MonoBehaviour
     public Image skill2Icon;
     public Image skill3Icon;
 
+    [Header("Cost Text")]
+    public TextMeshProUGUI healCostText;
+    public TextMeshProUGUI mediateCostText;
+    public TextMeshProUGUI skill1CostText;
+    public TextMeshProUGUI skill2CostText;
+    public TextMeshProUGUI skill3CostText;
+
     [Header("Sword Sprites")]
     public Sprite strikeSprite;
     public Sprite parrySprite;
@@ -110,6 +117,7 @@ public class BattleManager : MonoBehaviour
 
         UpdateSkillButtons();
         UpdateCooldownUI();
+        UpdateCostUI();
     }
 
     void UpdateEnemy()
@@ -137,8 +145,17 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    void UpdateCostUI()
+    {
+        if (healCostText != null) healCostText.text = healCost.ToString();
+        if (skill1CostText != null) skill1CostText.text = weaponSkills.GetSkill1Cost().ToString();
+        if (skill2CostText != null) skill2CostText.text = weaponSkills.GetSkill2Cost().ToString();
+        if (skill3CostText != null) skill3CostText.text = weaponSkills.GetSkill3Cost().ToString();
+    }
+
     void SetupWeaponUI()
     {
+        UpdateCostUI();
         skill1Button.onClick.RemoveAllListeners();
         skill2Button.onClick.RemoveAllListeners();
         skill3Button.onClick.RemoveAllListeners();

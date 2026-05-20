@@ -10,7 +10,10 @@ public class GameOver : MonoBehaviour
 
     public void StartBattle()
     {
-        SceneManager.LoadScene("Menu Scene");
+        PlayerData.Reset();
+        GameData.Reset();
+        WeaponData.equippedWeapon = WeaponType.None;
+        SceneManager.LoadScene("Main Menu");
     }
 
 }
